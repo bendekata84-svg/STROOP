@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>Stroop teszt – blokkos W / C / CW</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+      --ok: #166534;
+      --bad: #991b1b;
+      --border: #dbe3ef;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      overscroll-behavior: none;
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    .app {
+      width: min(1100px, 100%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #eff6ff, #ffffff);
+    }
+
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .header p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .content {
+      padding: 24px;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      background: #fff;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 14px; }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    input, select, button {
+      font: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    input[type="text"], select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 12px;
+      background: #fff;
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      font-weight: 700;
+    }
+
+    .checkbox-row input {
+      width: auto;
+      transform: scale(1.2);
+      accent-color: var(--accent);
+    }
+
+    .btnrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 14px 18px;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button:hover { background: var(--accent-2); }
+    button:active { transform: scale(0.99); }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    button.secondary:hover { background: #d1d5db; }
+
+    .metric-box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      background: #fafcff;
+    }
+
+    .metric-box h3 {
+      margin: 0 0 8px;
+    }
+
+    .test-area {
+      min-height: 540px;
+      min-height: 72svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #fcfdff;
+      padding: 20px;
+    }
+
+    .phase {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .countdown-box {
+      display: none;
+      min-width: 240px;
+      padding: 10px 18px;
+      border: 4px solid #111827;
+      border-radius: 14px;
+      background: #ffffff;
+      color: #111827;
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      letter-spacing: 1px;
+    }
+
+    .countdown-box.warning-medium { color: #ea580c; }
+    .countdown-box.warning-high { color: #dc2626; }
+
+    .cross {
+      font-size: 84px;
+      font-weight: 700;
+      color: #111827;
+      min-height: 100px;
+      display: none;
+    }
+
+    .stimulus-word {
+      font-size: 96px;
+      font-weight: 800;
+      line-height: 1.1;
+      user-select: none;
+      min-height: 120px;
+      display: none;
+      word-break: break-word;
+    }
+
+    .stimulus-square {
+      width: 280px;
+      height: 280px;
+      border-radius: 24px;
+      border: 4px solid rgba(0,0,0,0.08);
+      display: none;
+    }
+
+    .choice-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .choice-btn {
+      min-width: 190px;
+      min-height: 84px;
+      font-size: 28px;
+      padding: 18px 22px;
+      border-radius: 18px;
+      flex: 1 1 220px;
+    }
+
+    .status {
+      min-height: 28px;
+      font-weight: 700;
+    }
+
+    .ok { color: var(--ok); }
+    .bad { color: var(--bad); }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      border: 1px solid var(--border);
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .summary-table th { background: #f8fafc; }
+
+    .instr-list {
+      line-height: 1.7;
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1024px) {
+      body {
+        align-items: flex-start;
+        padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+      }
+
+      .app {
+        width: 100%;
+        border-radius: 14px;
+      }
+
+      .content {
+        padding: 14px;
+      }
+
+      .grid, .grid-4 {
+        grid-template-columns: 1fr;
+      }
+
+      .test-area {
+        min-height: 74svh;
+        padding: 18px 12px 22px;
+      }
+
+      .stimulus-word {
+        font-size: clamp(54px, 9vw, 78px);
+        min-height: 96px;
+      }
+
+      .stimulus-square {
+        width: min(58vw, 260px);
+        height: min(58vw, 260px);
+      }
+
+      .choice-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .choice-btn {
+        width: 100%;
+        min-width: 0;
+        min-height: 88px;
+        font-size: clamp(24px, 5.6vw, 30px);
+        flex: none;
+      }
+
+      .countdown-box {
+        font-size: clamp(28px, 6vw, 36px);
+        min-width: 180px;
+      }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      button:hover {
+        background: var(--accent);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <h1>STROOP teszt – blokkos W / C / CW</h1>
+      <p>A gyakorlás és a fő mérés is rögzített sorrendben fut: először szóolvasás (W), utána színmegnevezés (C), végül az inkongruens Stroop-blokk (CW).</p>
+    </div>
+
+    <div class="content">
+      <section id="setupScreen" class="screen active">
+        <div class="panel">
+          <h2>Beállítások</h2>
+          <div class="grid">
+            <div>
+              <label for="participantId">Kísérleti alany egyedi azonosítója</label>
+              <input id="participantId" type="text" placeholder="pl. P001" inputmode="text" autocapitalize="characters" autocomplete="off" />
+            </div>
+            <div>
+              <label for="stimulusDuration">Stimulus időtartama / válaszablak</label>
+              <select id="stimulusDuration">
+                <option value="3000" selected>3000 ms</option>
+              </select>
+            </div>
+            <div>
+              <label for="fixationDuration">Fókuszkereszt időtartama</label>
+              <select id="fixationDuration">
+                <option value="400" selected>400 ms</option>
+              </select>
+            </div>
+            <div>
+              <label for="mainMode">Fő mérés hossza</label>
+              <select id="mainMode">
+                <option value="demo" selected>Rövid demo: 5-5-5</option>
+                <option value="full">Teljes mérés: 30-30-60</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="checkbox-row">
+            <input id="enablePractice" type="checkbox" checked />
+            <label for="enablePractice" style="margin:0; font-weight:700;">15 próbás gyakorló blokk bekapcsolva</label>
+          </div>
+
+          <div class="checkbox-row">
+            <input id="enableTimer" type="checkbox" />
+            <label for="enableTimer" style="margin:0; font-weight:700;">Milliszekundumos időszámláló megjelenítése a stimulus felett</label>
+          </div>
+
+          <div class="panel" style="margin-top: 18px;">
+            <h3>Feladatszerkezet</h3>
+            <ul class="instr-list">
+              <li>A blokkok sorrendje fix: <strong>W → C → CW</strong>.</li>
+              <li>Minden blokk előtt külön magyarázó képernyő jelenik meg.</li>
+              <li>A gyakorlás, ha be van kapcsolva, <strong>5 W + 5 C + 5 CW</strong>.</li>
+              <li>A fő mérés választható: <strong>rövid demo 5-5-5</strong> vagy <strong>teljes 30-30-60</strong>.</li>
+            </ul>
+          </div>
+
+          <div class="panel" style="margin-top: 18px;">
+            <h3>Válaszbillentyűk / gombok</h3>
+            <ul class="instr-list">
+              <li><strong>P</strong> = piros</li>
+              <li><strong>Z</strong> = zöld</li>
+              <li><strong>K</strong> = kék</li>
+            </ul>
+          </div>
+
+          <div class="btnrow">
+            <button id="startBtn" type="button">Teszt indítása</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="instructionScreen" class="screen">
+        <div class="panel">
+          <h2 id="instructionTitle">Következő blokk</h2>
+          <p id="instructionText"></p>
+          <div class="btnrow">
+            <button id="instructionContinueBtn" type="button">Blokk indítása</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="testScreen" class="screen">
+        <div class="panel">
+          <div class="grid-4" style="margin-bottom: 16px;">
+            <div class="metric-box"><h3>Szakasz</h3><div id="stageInfo">Gyakorlás</div></div>
+            <div class="metric-box"><h3>Blokk</h3><div id="conditionInfo">W</div></div>
+            <div class="metric-box"><h3>Próba</h3><div id="trialInfo">1</div></div>
+            <div class="metric-box"><h3>Feladat</h3><div id="taskRule">Szó olvasása</div></div>
+          </div>
+
+          <div class="test-area">
+            <div id="phaseLabel" class="phase">Készülj</div>
+            <div id="countdownBox" class="countdown-box">3000 ms</div>
+            <div id="cross" class="cross">+</div>
+            <div id="stimulusWord" class="stimulus-word"></div>
+            <div id="stimulusSquare" class="stimulus-square"></div>
+            <div class="choice-row">
+              <button class="choice-btn" type="button" data-key="p">P – piros</button>
+              <button class="choice-btn" type="button" data-key="z">Z – zöld</button>
+              <button class="choice-btn" type="button" data-key="k">K – kék</button>
+            </div>
+            <div id="statusMsg" class="status"></div>
+            <div class="small muted">Billentyűzet: P / Z / K</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="practiceFeedbackScreen" class="screen">
+        <div class="panel">
+          <h2>Gyakorló blokk vége</h2>
+          <div class="grid">
+            <div class="metric-box">
+              <h3>Átlagos RT</h3>
+              <div id="practiceMeanRt" style="font-size: 28px; font-weight: 800;">—</div>
+            </div>
+            <div class="metric-box">
+              <h3>Pontosság</h3>
+              <div id="practiceAccuracy" style="font-size: 28px; font-weight: 800;">—</div>
+            </div>
+          </div>
+          <div class="btnrow">
+            <button id="startMainBtn" type="button">Fő mérés indítása</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="finalScreen" class="screen">
+        <div class="panel">
+          <h2>Mérés befejezve</h2>
+          <p>A blokkok rögzített sorrendben futottak le, és az eredmények Jamovi-kompatibilis formában letölthetők.</p>
+
+          <div class="grid">
+            <div class="metric-box">
+              <h3>Globális interferenciaindex</h3>
+              <div id="globalInterference" style="font-size: 28px; font-weight: 800;">—</div>
+              <div class="small muted">CW a W és C alapokhoz viszonyítva</div>
+            </div>
+            <div class="metric-box">
+              <h3>Stroop-hatás</h3>
+              <div id="finalStroop" style="font-size: 28px; font-weight: 800;">—</div>
+              <div class="small muted">CW átlag RT – C átlag RT</div>
+            </div>
+          </div>
+
+          <table class="summary-table" id="summaryTable">
+            <thead>
+              <tr><th>Mutató</th><th>Érték</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <div class="btnrow">
+            <button id="downloadSummaryBtn" type="button">Összesített CSV letöltése</button>
+            <button id="downloadTrialsBtn" type="button">Trial log CSV letöltése</button>
+            <button id="downloadCombinedBtn" type="button">Jamovi long-form CSV letöltése</button>
+            <button id="restartBtn" class="secondary" type="button">Új mérés</button>
+          </div>
+
+          <div class="footer-note">
+            A számláló opcionálisan bekapcsolható. 2000–1000 ms között narancssárga, 1000 ms alatt piros betűszínnel jelenik meg.
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = [
+      { name: 'piros', key: 'p', css: '#dc2626' },
+      { name: 'zöld', key: 'z', css: '#16a34a' },
+      { name: 'kék', key: 'k', css: '#2563eb' }
+    ];
+
+    const BLOCK_DEFS = {
+      W: {
+        title: 'Szóolvasás blokk (W)',
+        instruction: 'Ebben a blokkban színszavak jelennek meg fekete betűkkel. Arra kell válaszolni, amit elolvasol. P = piros, Z = zöld, K = kék.',
+        task_rule: 'A szó jelentésére válaszolj'
+      },
+      C: {
+        title: 'Színmegnevezés blokk (C)',
+        instruction: 'Ebben a blokkban nagy színes négyzetek jelennek meg. A négyzet színére kell válaszolni. P = piros, Z = zöld, K = kék.',
+        task_rule: 'A négyzet színére válaszolj'
+      },
+      CW: {
+        title: 'Stroop blokk (CW)',
+        instruction: 'Ebben a blokkban a szó jelentése és a tinta színe eltér. Nem a szót kell követni, hanem a betűk színére kell válaszolni. P = piros, Z = zöld, K = kék.',
+        task_rule: 'A tinta színére válaszolj'
+      }
+    };
+
+    const state = {
+      participantId: '',
+      fixationDuration: 400,
+      stimulusDuration: 3000,
+      enablePractice: true,
+      enableTimer: false,
+      mainMode: 'demo',
+      stage: 'practice',
+      stageTrials: {},
+      blockOrder: [],
+      currentBlockIndex: 0,
+      currentBlockTrials: [],
+      currentTrialIndex: 0,
+      currentTrial: null,
+      awaitingResponse: false,
+      allRecords: [],
+      stimulusStart: null,
+      fixationTimeout: null,
+      stimulusTimeout: null,
+      countdownInterval: null,
+      suppressTapUntil: 0
+    };
+
+    const els = {
+      setupScreen: document.getElementById('setupScreen'),
+      instructionScreen: document.getElementById('instructionScreen'),
+      testScreen: document.getElementById('testScreen'),
+      practiceFeedbackScreen: document.getElementById('practiceFeedbackScreen'),
+      finalScreen: document.getElementById('finalScreen'),
+      participantId: document.getElementById('participantId'),
+      stimulusDuration: document.getElementById('stimulusDuration'),
+      fixationDuration: document.getElementById('fixationDuration'),
+      mainMode: document.getElementById('mainMode'),
+      enablePractice: document.getElementById('enablePractice'),
+      enableTimer: document.getElementById('enableTimer'),
+      startBtn: document.getElementById('startBtn'),
+      instructionTitle: document.getElementById('instructionTitle'),
+      instructionText: document.getElementById('instructionText'),
+      instructionContinueBtn: document.getElementById('instructionContinueBtn'),
+      stageInfo: document.getElementById('stageInfo'),
+      conditionInfo: document.getElementById('conditionInfo'),
+      trialInfo: document.getElementById('trialInfo'),
+      taskRule: document.getElementById('taskRule'),
+      phaseLabel: document.getElementById('phaseLabel'),
+      countdownBox: document.getElementById('countdownBox'),
+      cross: document.getElementById('cross'),
+      stimulusWord: document.getElementById('stimulusWord'),
+      stimulusSquare: document.getElementById('stimulusSquare'),
+      statusMsg: document.getElementById('statusMsg'),
+      practiceMeanRt: document.getElementById('practiceMeanRt'),
+      practiceAccuracy: document.getElementById('practiceAccuracy'),
+      startMainBtn: document.getElementById('startMainBtn'),
+      finalStroop: document.getElementById('finalStroop'),
+      globalInterference: document.getElementById('globalInterference'),
+      summaryTableBody: document.querySelector('#summaryTable tbody'),
+      downloadSummaryBtn: document.getElementById('downloadSummaryBtn'),
+      downloadTrialsBtn: document.getElementById('downloadTrialsBtn'),
+      downloadCombinedBtn: document.getElementById('downloadCombinedBtn'),
+      restartBtn: document.getElementById('restartBtn'),
+      choiceBtns: Array.from(document.querySelectorAll('.choice-btn'))
+    };
+
+    function showScreen(screen) {
+      [els.setupScreen, els.instructionScreen, els.testScreen, els.practiceFeedbackScreen, els.finalScreen]
+        .forEach(el => el.classList.remove('active'));
+      screen.classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function mean(values) {
+      if (!values.length) return null;
+      return values.reduce((a, b) => a + b, 0) / values.length;
+    }
+
+    function std(values) {
+      if (values.length < 2) return 0;
+      const m = mean(values);
+      const variance = values.reduce((sum, v) => sum + ((v - m) ** 2), 0) / (values.length - 1);
+      return Math.sqrt(variance);
+    }
+
+    function roundTo(value, digits = 2) {
+      if (value === null || Number.isNaN(value)) return '';
+      return Number(value).toFixed(digits);
+    }
+
+    function createWTrials(n, stageLabel) {
+      const trials = [];
+      for (let i = 0; i < n; i++) {
+        const color = COLORS[i % COLORS.length];
+        trials.push({
+          stage: stageLabel,
+          condition: 'W',
+          task_rule: BLOCK_DEFS.W.task_rule,
+          stimulus_kind: 'word_black',
+          stimulus_text: color.name,
+          stimulus_color_name: 'fekete',
+          stimulus_css: '#111111',
+          correct_key: color.key,
+          correct_label: color.name
+        });
+      }
+      return shuffle(trials);
+    }
+
+    function createCTrials(n, stageLabel) {
+      const trials = [];
+      for (let i = 0; i < n; i++) {
+        const color = COLORS[i % COLORS.length];
+        trials.push({
+          stage: stageLabel,
+          condition: 'C',
+          task_rule: BLOCK_DEFS.C.task_rule,
+          stimulus_kind: 'color_square',
+          stimulus_text: '',
+          stimulus_color_name: color.name,
+          stimulus_css: color.css,
+          correct_key: color.key,
+          correct_label: color.name
+        });
+      }
+      return shuffle(trials);
+    }
+
+    function createCWTrials(n, stageLabel) {
+      const trials = [];
+      for (let i = 0; i < n; i++) {
+        const targetColor = COLORS[i % COLORS.length];
+        const otherWords = COLORS.filter(c => c.name !== targetColor.name);
+        const word = otherWords[Math.floor(Math.random() * otherWords.length)];
+        trials.push({
+          stage: stageLabel,
+          condition: 'CW',
+          task_rule: BLOCK_DEFS.CW.task_rule,
+          stimulus_kind: 'incongruent_word_color',
+          stimulus_text: word.name,
+          stimulus_color_name: targetColor.name,
+          stimulus_css: targetColor.css,
+          correct_key: targetColor.key,
+          correct_label: targetColor.name
+        });
+      }
+      return shuffle(trials);
+    }
+
+    function buildStageTrials(stageLabel, counts) {
+      return {
+        W: createWTrials(counts.W, stageLabel).map((t, i) => ({ ...t, block_trial_index: i + 1 })),
+        C: createCTrials(counts.C, stageLabel).map((t, i) => ({ ...t, block_trial_index: i + 1 })),
+        CW: createCWTrials(counts.CW, stageLabel).map((t, i) => ({ ...t, block_trial_index: i + 1 }))
+      };
+    }
+
+    function resetTimers() {
+      clearTimeout(state.fixationTimeout);
+      clearTimeout(state.stimulusTimeout);
+      clearInterval(state.countdownInterval);
+      state.countdownInterval = null;
+    }
+
+    function startExperiment() {
+      state.participantId = els.participantId.value.trim() || `P_${Date.now()}`;
+      state.fixationDuration = Number(els.fixationDuration.value);
+      state.stimulusDuration = Number(els.stimulusDuration.value);
+      state.enablePractice = els.enablePractice.checked;
+      state.enableTimer = els.enableTimer.checked;
+      state.mainMode = els.mainMode.value;
+      state.allRecords = [];
+      state.awaitingResponse = false;
+      resetTimers();
+
+      if (state.enablePractice) {
+        state.stage = 'practice';
+        state.stageTrials = buildStageTrials('practice', { W: 5, C: 5, CW: 5 });
+        state.blockOrder = ['W', 'C', 'CW'];
+        state.currentBlockIndex = 0;
+        prepareBlock();
+      } else {
+        startMainMeasurement();
+      }
+    }
+
+    function startMainMeasurement() {
+      state.stage = 'main';
+      const counts = state.mainMode === 'full' ? { W: 30, C: 30, CW: 60 } : { W: 5, C: 5, CW: 5 };
+      state.stageTrials = buildStageTrials('main', counts);
+      state.blockOrder = ['W', 'C', 'CW'];
+      state.currentBlockIndex = 0;
+      prepareBlock();
+    }
+
+    function prepareBlock() {
+      resetTimers();
+      const blockKey = state.blockOrder[state.currentBlockIndex];
+      state.currentBlockTrials = state.stageTrials[blockKey] || [];
+      state.currentTrialIndex = 0;
+      els.instructionTitle.textContent = `${state.stage === 'practice' ? 'Gyakorlás' : 'Fő mérés'} – ${BLOCK_DEFS[blockKey].title}`;
+      els.instructionText.textContent = BLOCK_DEFS[blockKey].instruction;
+      showScreen(els.instructionScreen);
+    }
+
+    function clearStimulus() {
+      els.cross.style.display = 'none';
+      els.stimulusWord.style.display = 'none';
+      els.stimulusWord.textContent = '';
+      els.stimulusSquare.style.display = 'none';
+      els.stimulusSquare.style.background = 'transparent';
+      els.countdownBox.style.display = 'none';
+      els.countdownBox.classList.remove('warning-medium', 'warning-high');
+      clearInterval(state.countdownInterval);
+      state.countdownInterval = null;
+    }
+
+    function updateProgress(trial) {
+      els.stageInfo.textContent = state.stage === 'practice' ? 'Gyakorlás' : 'Fő mérés';
+      els.conditionInfo.textContent = trial.condition;
+      els.trialInfo.textContent = `${state.currentTrialIndex + 1} / ${state.currentBlockTrials.length}`;
+      els.taskRule.textContent = trial.task_rule;
+    }
+
+    function updateCountdownDisplay(ms) {
+      els.countdownBox.textContent = `${ms} ms`;
+      els.countdownBox.classList.remove('warning-medium', 'warning-high');
+      if (ms < 1000) {
+        els.countdownBox.classList.add('warning-high');
+      } else if (ms <= 2000) {
+        els.countdownBox.classList.add('warning-medium');
+      }
+    }
+
+    function nextTrial() {
+      resetTimers();
+      state.awaitingResponse = false;
+
+      if (state.currentTrialIndex >= state.currentBlockTrials.length) {
+        endBlock();
+        return;
+      }
+
+      const trial = state.currentBlockTrials[state.currentTrialIndex];
+      state.currentTrial = trial;
+      updateProgress(trial);
+      clearStimulus();
+      els.statusMsg.textContent = '';
+      els.statusMsg.className = 'status';
+      els.phaseLabel.textContent = 'Fixáció';
+      els.cross.style.display = 'block';
+      state.fixationTimeout = setTimeout(() => presentStimulus(trial), state.fixationDuration);
+    }
+
+    function presentStimulus(trial) {
+      clearStimulus();
+      els.phaseLabel.textContent = trial.condition;
+
+      if (state.enableTimer) {
+        els.countdownBox.style.display = 'block';
+        updateCountdownDisplay(state.stimulusDuration);
+      }
+
+      if (trial.stimulus_kind === 'color_square') {
+        els.stimulusSquare.style.display = 'block';
+        els.stimulusSquare.style.background = trial.stimulus_css;
+      } else {
+        els.stimulusWord.style.display = 'block';
+        els.stimulusWord.textContent = trial.stimulus_text;
+        els.stimulusWord.style.color = trial.stimulus_css;
+      }
+
+      state.awaitingResponse = true;
+      state.stimulusStart = performance.now();
+
+      if (state.enableTimer) {
+        state.countdownInterval = setInterval(() => {
+          const elapsed = performance.now() - state.stimulusStart;
+          const remaining = Math.max(0, Math.ceil(state.stimulusDuration - elapsed));
+          updateCountdownDisplay(remaining);
+        }, 16);
+      }
+
+      state.stimulusTimeout = setTimeout(() => registerResponse(null), state.stimulusDuration);
+    }
+
+    function registerResponse(key) {
+      if (!state.awaitingResponse || !state.currentTrial) return;
+
+      state.awaitingResponse = false;
+      clearTimeout(state.stimulusTimeout);
+      clearInterval(state.countdownInterval);
+      state.countdownInterval = null;
+      state.suppressTapUntil = performance.now() + 120;
+
+      const rt = key ? Math.round(performance.now() - state.stimulusStart) : null;
+      const correct = key === state.currentTrial.correct_key;
+      const omission = key === null;
+      const responseLabel = COLORS.find(c => c.key === key)?.name || '';
+      const ts = new Date();
+
+      state.allRecords.push({
+        participant_id: state.participantId,
+        stage: state.stage,
+        condition: state.currentTrial.condition,
+        block_trial_index: state.currentTrial.block_trial_index,
+        global_trial_index: state.allRecords.length + 1,
+        task_rule: state.currentTrial.task_rule,
+        stimulus_kind: state.currentTrial.stimulus_kind,
+        stimulus_text: state.currentTrial.stimulus_text,
+        stimulus_color_name: state.currentTrial.stimulus_color_name,
+        correct_key: state.currentTrial.correct_key,
+        correct_label: state.currentTrial.correct_label,
+        response_key: key || '',
+        response_label: responseLabel,
+        correct: correct ? 1 : 0,
+        error: key && !correct ? 1 : 0,
+        omission: omission ? 1 : 0,
+        rt_ms: rt,
+        timer_enabled: state.enableTimer ? 1 : 0,
+        timestamp_iso: ts.toISOString(),
+        timestamp_local: ts.toLocaleString('hu-HU')
+      });
+
+      if (omission) {
+        els.statusMsg.textContent = 'Nincs válasz';
+        els.statusMsg.className = 'status bad';
+      } else if (correct) {
+        els.statusMsg.textContent = `Helyes (${rt} ms)`;
+        els.statusMsg.className = 'status ok';
+      } else {
+        els.statusMsg.textContent = `Hibás (${rt} ms)`;
+        els.statusMsg.className = 'status bad';
+      }
+
+      state.currentTrialIndex += 1;
+      setTimeout(nextTrial, 500);
+    }
+
+    function endBlock() {
+      state.currentBlockIndex += 1;
+      if (state.currentBlockIndex >= state.blockOrder.length) {
+        endStage();
+      } else {
+        prepareBlock();
+      }
+    }
+
+    function endStage() {
+      if (state.stage === 'practice') {
+        const practiceRecs = state.allRecords.filter(r => r.stage === 'practice');
+        const practiceCorrect = practiceRecs.filter(r => r.correct === 1 && r.rt_ms !== null);
+        const acc = practiceRecs.length ? (practiceRecs.filter(r => r.correct === 1).length / practiceRecs.length) * 100 : 0;
+        els.practiceMeanRt.textContent = practiceCorrect.length ? `${Math.round(mean(practiceCorrect.map(r => r.rt_ms)))} ms` : 'n.a.';
+        els.practiceAccuracy.textContent = `${roundTo(acc, 1)}%`;
+        showScreen(els.practiceFeedbackScreen);
+      } else {
+        finishExperiment();
+      }
+    }
+
+    function markOutliers(records) {
+      const correctRTs = records
+        .filter(r => r.stage === 'main' && r.correct === 1 && r.rt_ms !== null)
+        .map(r => r.rt_ms);
+      const m = mean(correctRTs);
+      const s = std(correctRTs);
+      const upper = m !== null ? m + 2 * s : null;
+      const lower = m !== null ? Math.max(0, m - 2 * s) : null;
+
+      return records.map(r => {
+        const outlier = r.stage === 'main' && r.correct === 1 && r.rt_ms !== null && m !== null && (r.rt_ms > upper || r.rt_ms < lower);
+        return { ...r, outlier_2sd: outlier ? 1 : 0 };
+      });
+    }
+
+    function conditionStats(records, condition) {
+      const all = records.filter(r => r.stage === 'main' && r.condition === condition);
+      const valid = all.filter(r => r.correct === 1 && r.outlier_2sd === 0 && r.rt_ms !== null);
+      return {
+        n_total: all.length,
+        n_valid_rt: valid.length,
+        avg_rt_ms: mean(valid.map(r => r.rt_ms)),
+        accuracy_percent: all.length ? (all.filter(r => r.correct === 1).length / all.length) * 100 : 0,
+        errors: all.filter(r => r.error === 1).length,
+        omissions: all.filter(r => r.omission === 1).length
+      };
+    }
+
+    function calculateOutputs() {
+      const withOutliers = markOutliers(state.allRecords);
+      const W = conditionStats(withOutliers, 'W');
+      const C = conditionStats(withOutliers, 'C');
+      const CW = conditionStats(withOutliers, 'CW');
+      const baselineMean = (W.avg_rt_ms !== null && C.avg_rt_ms !== null) ? (W.avg_rt_ms + C.avg_rt_ms) / 2 : null;
+      const globalInterference = (CW.avg_rt_ms !== null && baselineMean !== null) ? (CW.avg_rt_ms - baselineMean) : null;
+      const stroopEffect = (CW.avg_rt_ms !== null && C.avg_rt_ms !== null) ? (CW.avg_rt_ms - C.avg_rt_ms) : null;
+      const mainRecords = withOutliers.filter(r => r.stage === 'main');
+      const validMain = mainRecords.filter(r => r.correct === 1 && r.outlier_2sd === 0 && r.rt_ms !== null);
+
+      return {
+        trials: withOutliers,
+        stats: { W, C, CW },
+        total: {
+          n_total: mainRecords.length,
+          n_valid_rt: validMain.length,
+          avg_rt_ms: mean(validMain.map(r => r.rt_ms)),
+          errors: mainRecords.filter(r => r.error === 1).length,
+          omissions: mainRecords.filter(r => r.omission === 1).length,
+          outliers: mainRecords.filter(r => r.outlier_2sd === 1).length,
+          baseline_mean_rt_ms: baselineMean,
+          global_interference_index_ms: globalInterference,
+          stroop_effect_ms: stroopEffect
+        }
+      };
+    }
+
+    function renderFinalResults(outputs) {
+      els.globalInterference.textContent = outputs.total.global_interference_index_ms !== null ? `${Math.round(outputs.total.global_interference_index_ms)} ms` : 'n.a.';
+      els.finalStroop.textContent = outputs.total.stroop_effect_ms !== null ? `${Math.round(outputs.total.stroop_effect_ms)} ms` : 'n.a.';
+
+      const rows = [
+        ['Résztvevő azonosító', state.participantId],
+        ['Fő mérés összes próba', outputs.total.n_total],
+        ['Érvényes RT-k száma', outputs.total.n_valid_rt],
+        ['W átlag RT (ms)', roundTo(outputs.stats.W.avg_rt_ms, 2)],
+        ['W pontosság (%)', roundTo(outputs.stats.W.accuracy_percent, 2)],
+        ['W hibák', outputs.stats.W.errors],
+        ['W omissziók', outputs.stats.W.omissions],
+        ['C átlag RT (ms)', roundTo(outputs.stats.C.avg_rt_ms, 2)],
+        ['C pontosság (%)', roundTo(outputs.stats.C.accuracy_percent, 2)],
+        ['C hibák', outputs.stats.C.errors],
+        ['C omissziók', outputs.stats.C.omissions],
+        ['CW átlag RT (ms)', roundTo(outputs.stats.CW.avg_rt_ms, 2)],
+        ['CW pontosság (%)', roundTo(outputs.stats.CW.accuracy_percent, 2)],
+        ['CW hibák', outputs.stats.CW.errors],
+        ['CW omissziók', outputs.stats.CW.omissions],
+        ['Outlier-ek (>2 SD)', outputs.total.outliers],
+        ['W és C alap RT átlaga (ms)', roundTo(outputs.total.baseline_mean_rt_ms, 2)],
+        ['Globális interferenciaindex (ms)', roundTo(outputs.total.global_interference_index_ms, 2)],
+        ['Stroop-hatás (CW - C, ms)', roundTo(outputs.total.stroop_effect_ms, 2)]
+      ];
+
+      els.summaryTableBody.innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+      els.downloadSummaryBtn.onclick = () => downloadSummaryCSV(outputs);
+      els.downloadTrialsBtn.onclick = () => downloadTrialsCSV(outputs);
+      els.downloadCombinedBtn.onclick = () => downloadCombinedCSV(outputs);
+    }
+
+    function escapeCsv(value) {
+      if (value === null || value === undefined) return '';
+      const s = String(value);
+      if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    }
+
+    function downloadTextFile(filename, text) {
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadSummaryCSV(outputs) {
+      const row = {
+        participant_id: state.participantId,
+        main_mode: state.mainMode,
+        timer_enabled: state.enableTimer ? 1 : 0,
+        main_total_trials: outputs.total.n_total,
+        valid_rt_trials: outputs.total.n_valid_rt,
+        W_avg_rt_ms: roundTo(outputs.stats.W.avg_rt_ms, 2),
+        W_accuracy_percent: roundTo(outputs.stats.W.accuracy_percent, 2),
+        W_errors: outputs.stats.W.errors,
+        W_omissions: outputs.stats.W.omissions,
+        C_avg_rt_ms: roundTo(outputs.stats.C.avg_rt_ms, 2),
+        C_accuracy_percent: roundTo(outputs.stats.C.accuracy_percent, 2),
+        C_errors: outputs.stats.C.errors,
+        C_omissions: outputs.stats.C.omissions,
+        CW_avg_rt_ms: roundTo(outputs.stats.CW.avg_rt_ms, 2),
+        CW_accuracy_percent: roundTo(outputs.stats.CW.accuracy_percent, 2),
+        CW_errors: outputs.stats.CW.errors,
+        CW_omissions: outputs.stats.CW.omissions,
+        outliers_2sd: outputs.total.outliers,
+        baseline_mean_rt_ms: roundTo(outputs.total.baseline_mean_rt_ms, 2),
+        global_interference_index_ms: roundTo(outputs.total.global_interference_index_ms, 2),
+        stroop_effect_ms_CW_minus_C: roundTo(outputs.total.stroop_effect_ms, 2)
+      };
+      const headers = Object.keys(row);
+      const csv = [headers.join(','), headers.map(h => escapeCsv(row[h])).join(',')].join('\n');
+      downloadTextFile(`${state.participantId}_stroop_summary.csv`, csv);
+    }
+
+    function downloadTrialsCSV(outputs) {
+      const rows = outputs.trials;
+      if (!rows.length) return;
+      const headers = Object.keys(rows[0]);
+      const csv = [headers.join(','), ...rows.map(row => headers.map(h => escapeCsv(row[h])).join(','))].join('\n');
+      downloadTextFile(`${state.participantId}_stroop_trials.csv`, csv);
+    }
+
+    function downloadCombinedCSV(outputs) {
+      const rows = outputs.trials.map(row => ({
+        ...row,
+        main_mode: state.mainMode,
+        W_avg_rt_ms: roundTo(outputs.stats.W.avg_rt_ms, 2),
+        W_accuracy_percent: roundTo(outputs.stats.W.accuracy_percent, 2),
+        C_avg_rt_ms: roundTo(outputs.stats.C.avg_rt_ms, 2),
+        C_accuracy_percent: roundTo(outputs.stats.C.accuracy_percent, 2),
+        CW_avg_rt_ms: roundTo(outputs.stats.CW.avg_rt_ms, 2),
+        CW_accuracy_percent: roundTo(outputs.stats.CW.accuracy_percent, 2),
+        baseline_mean_rt_ms: roundTo(outputs.total.baseline_mean_rt_ms, 2),
+        global_interference_index_ms: roundTo(outputs.total.global_interference_index_ms, 2),
+        stroop_effect_ms_CW_minus_C: roundTo(outputs.total.stroop_effect_ms, 2)
+      }));
+      if (!rows.length) return;
+      const headers = Object.keys(rows[0]);
+      const csv = [headers.join(','), ...rows.map(row => headers.map(h => escapeCsv(row[h])).join(','))].join('\n');
+      downloadTextFile(`${state.participantId}_stroop_longform.csv`, csv);
+    }
+
+    function finishExperiment() {
+      const outputs = calculateOutputs();
+      renderFinalResults(outputs);
+      showScreen(els.finalScreen);
+    }
+
+    function handleResponseKey(key) {
+      const normalized = String(key).toLowerCase();
+      if (!['p', 'z', 'k'].includes(normalized)) return;
+      registerResponse(normalized);
+    }
+
+    function handleChoicePress(key, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      if (performance.now() < state.suppressTapUntil) return;
+      handleResponseKey(key);
+    }
+
+    document.addEventListener('keydown', (e) => handleResponseKey(e.key));
+
+    els.choiceBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => handleChoicePress(btn.dataset.key, e));
+      btn.addEventListener('touchstart', (e) => handleChoicePress(btn.dataset.key, e), { passive: false });
+      btn.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+          handleChoicePress(btn.dataset.key, e);
+        }
+      });
+    });
+
+    els.startBtn.addEventListener('click', startExperiment);
+    els.instructionContinueBtn.addEventListener('click', () => {
+      showScreen(els.testScreen);
+      nextTrial();
+    });
+    els.startMainBtn.addEventListener('click', startMainMeasurement);
+    els.restartBtn.addEventListener('click', () => {
+      resetTimers();
+      state.countdownInterval = null;
+      state.awaitingResponse = false;
+      showScreen(els.setupScreen);
+    });
+  </script>
+</body>
+</html>

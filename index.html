@@ -183,7 +183,7 @@
 
     .test-area {
       min-height: 540px;
-      min-height: 72svh;
+      min-height: 78svh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -244,7 +244,7 @@
 
     .stimulus-square {
       width: 280px;
-      height: 280px;
+      height: 160px;
       border-radius: 24px;
       border: 4px solid rgba(0,0,0,0.08);
       display: none;
@@ -325,7 +325,7 @@
       }
 
       .test-area {
-        min-height: 74svh;
+        min-height: 78svh;
         padding: 18px 12px 22px;
       }
 
@@ -335,8 +335,8 @@
       }
 
       .stimulus-square {
-        width: min(58vw, 260px);
-        height: min(58vw, 260px);
+        width: min(62vw, 260px);
+        height: min(28vw, 120px);
       }
 
       .choice-row {
@@ -395,10 +395,9 @@
               </select>
             </div>
             <div>
-              <label for="mainMode">Fő mérés hossza</label>
+              <label for="mainMode">Fő mérés</label>
               <select id="mainMode">
-                <option value="demo" selected>Rövid demo: 5-5-5</option>
-                <option value="full">Teljes mérés: 30-30-60</option>
+                <option value="full" selected>Teljes mérés: 30-30-60</option>
               </select>
             </div>
           </div>
@@ -419,7 +418,7 @@
               <li>A blokkok sorrendje fix: <strong>W → C → CW</strong>.</li>
               <li>Minden blokk előtt külön magyarázó képernyő jelenik meg.</li>
               <li>A gyakorlás, ha be van kapcsolva, <strong>5 W + 5 C + 5 CW</strong>.</li>
-              <li>A fő mérés választható: <strong>rövid demo 5-5-5</strong> vagy <strong>teljes 30-30-60</strong>.</li>
+              <li>A fő mérés: <strong>teljes 30-30-60</strong>.</li>
             </ul>
           </div>
 
@@ -443,7 +442,7 @@
           <h2 id="instructionTitle">Következő blokk</h2>
           <p id="instructionText"></p>
           <div class="btnrow">
-            <button id="instructionContinueBtn" type="button">Blokk indítása</button>
+            <button id="instructionContinueBtn" type="button">Elolvastam, kezdhetjük</button>
           </div>
         </div>
       </section>
@@ -548,8 +547,8 @@
       },
       C: {
         title: 'Színmegnevezés blokk (C)',
-        instruction: 'Ebben a blokkban nagy színes négyzetek jelennek meg. A négyzet színére kell válaszolni. P = piros, Z = zöld, K = kék.',
-        task_rule: 'A négyzet színére válaszolj'
+        instruction: 'Ebben a blokkban színes téglalapok jelennek meg. A téglalap színére kell válaszolni. P = piros, Z = zöld, K = kék.',
+        task_rule: 'A téglalap színére válaszolj'
       },
       CW: {
         title: 'Stroop blokk (CW)',
@@ -564,7 +563,7 @@
       stimulusDuration: 3000,
       enablePractice: true,
       enableTimer: false,
-      mainMode: 'demo',
+      mainMode: 'full',
       stage: 'practice',
       stageTrials: {},
       blockOrder: [],
@@ -624,7 +623,7 @@
       [els.setupScreen, els.instructionScreen, els.testScreen, els.practiceFeedbackScreen, els.finalScreen]
         .forEach(el => el.classList.remove('active'));
       screen.classList.add('active');
-      window.scrollTo(0, 0);
+      requestAnimationFrame(() => window.scrollTo(0, 0));
     }
 
     function shuffle(arr) {
@@ -733,7 +732,7 @@
       state.stimulusDuration = Number(els.stimulusDuration.value);
       state.enablePractice = els.enablePractice.checked;
       state.enableTimer = els.enableTimer.checked;
-      state.mainMode = els.mainMode.value;
+      state.mainMode = 'full';
       state.allRecords = [];
       state.awaitingResponse = false;
       resetTimers();
@@ -751,7 +750,7 @@
 
     function startMainMeasurement() {
       state.stage = 'main';
-      const counts = state.mainMode === 'full' ? { W: 30, C: 30, CW: 60 } : { W: 5, C: 5, CW: 5 };
+      const counts = { W: 30, C: 30, CW: 60 };
       state.stageTrials = buildStageTrials('main', counts);
       state.blockOrder = ['W', 'C', 'CW'];
       state.currentBlockIndex = 0;
@@ -1034,7 +1033,7 @@
     function downloadSummaryCSV(outputs) {
       const row = {
         participant_id: state.participantId,
-        main_mode: state.mainMode,
+        main_mode: 'full',
         timer_enabled: state.enableTimer ? 1 : 0,
         main_total_trials: outputs.total.n_total,
         valid_rt_trials: outputs.total.n_valid_rt,
@@ -1071,7 +1070,7 @@
     function downloadCombinedCSV(outputs) {
       const rows = outputs.trials.map(row => ({
         ...row,
-        main_mode: state.mainMode,
+        main_mode: 'full',
         W_avg_rt_ms: roundTo(outputs.stats.W.avg_rt_ms, 2),
         W_accuracy_percent: roundTo(outputs.stats.W.accuracy_percent, 2),
         C_avg_rt_ms: roundTo(outputs.stats.C.avg_rt_ms, 2),
@@ -1124,9 +1123,14 @@
     els.startBtn.addEventListener('click', startExperiment);
     els.instructionContinueBtn.addEventListener('click', () => {
       showScreen(els.testScreen);
-      nextTrial();
+      requestAnimationFrame(() => window.scrollTo(0, 0));
+      setTimeout(nextTrial, 50);
     });
-    els.startMainBtn.addEventListener('click', startMainMeasurement);
+    els.startMainBtn.addEventListener('click', () => {
+      showScreen(els.instructionScreen);
+      requestAnimationFrame(() => window.scrollTo(0, 0));
+      startMainMeasurement();
+    });
     els.restartBtn.addEventListener('click', () => {
       resetTimers();
       state.countdownInterval = null;

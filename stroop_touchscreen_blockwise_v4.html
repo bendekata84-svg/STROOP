@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Stroop – érintőképernyős verzió</title>
+  <style>
+    :root {
+      --bg: #f7f7f5;
+      --fg: #1f1f1f;
+      --muted: #666;
+      --panel: #ffffff;
+      --border: #d9d9d9;
+      --btn: #8f8f8f;
+      --btn-active: #6f6f6f;
+      --danger: #b00020;
+      --accent: #111;
+      --safe-bottom: max(16px, env(safe-area-inset-bottom));
+      --orange: #f59e0b;
+      --red: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen {
+      width: min(980px, 100vw);
+      height: min(100vh, 100svh);
+      padding: 28px 24px calc(28px + var(--safe-bottom));
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen.active { display: flex; }
+
+    .card {
+      width: min(780px, 100%);
+      max-height: 100%;
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+
+    h1, h2, h3 { margin-top: 0; }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    p, li, label, input, button { font-size: 1rem; line-height: 1.45; }
+    .small { color: var(--muted); font-size: 0.95rem; }
+    .warn { color: var(--danger); }
+
+    .row {
+      display: grid;
+      gap: 14px;
+      margin: 16px 0;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 1rem;
+    }
+
+    .checkboxes {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .checkboxes label {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: #fafafa;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      border-radius: 12px;
+    }
+
+    .primary-btn, .secondary-btn, .download-btn {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+      min-height: 48px;
+    }
+
+    .primary-btn { background: #111; color: #fff; }
+    .secondary-btn { background: #ececec; color: #111; }
+    .download-btn { color: #083; background: #dff7e7; }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .mapping-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(180px, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .mapping-item {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fafafa;
+    }
+
+    .mapping-top {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .mini-button {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--btn);
+      border: 2px solid #5e5e5e;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #111;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    #experiment-screen {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      max-width: 100vw;
+      max-height: 100vh;
+      padding: 0;
+      background: var(--bg);
+      display: none;
+    }
+    #experiment-screen.active { display: block; }
+
+    #fixation, #stimulus {
+      position: absolute;
+      left: 50%;
+      top: 38%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #fixation {
+      display: none;
+      font-size: 52px;
+      font-weight: 700;
+    }
+
+    #stimulus {
+      display: none;
+      font-size: clamp(40px, 8vw, 78px);
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      line-height: 1.1;
+      max-width: 90vw;
+      word-break: break-word;
+    }
+
+    #status-line {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    #countdown-box {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 220px;
+      min-height: 110px;
+      padding: 10px 26px;
+      border: 4px solid #111;
+      border-radius: 18px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 54px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      background: #fff;
+      color: #000;
+      z-index: 2;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.14);
+    }
+
+    #feedback-box {
+      position: absolute;
+      left: 50%;
+      top: 22%;
+      transform: translate(-50%, -50%);
+      min-width: 220px;
+      min-height: 64px;
+      padding: 10px 18px;
+      border: 2px solid #111;
+      border-radius: 14px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      background: #fff;
+      z-index: 2;
+    }
+
+    #feedback-mapping {
+      position: absolute;
+      left: 50%;
+      top: 58%;
+      transform: translate(-50%, -50%);
+      width: min(760px, 92vw);
+      display: none;
+      z-index: 2;
+    }
+
+    .touch-area {
+      position: absolute;
+      bottom: calc(18px + var(--safe-bottom));
+      width: min(40vw, 300px);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .touch-area.left { left: 16px; }
+    .touch-area.right { right: 16px; }
+
+    .touch-btn {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      border: 2px solid #5d5d5d;
+      background: var(--btn);
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.12);
+      cursor: pointer;
+      touch-action: manipulation;
+      font-size: clamp(18px, 3vw, 26px);
+      font-weight: 800;
+      color: #111;
+    }
+
+    .touch-btn:active,
+    .touch-btn.pressed {
+      background: var(--btn-active);
+      transform: scale(0.98);
+    }
+
+    .touch-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .summary-item {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fafafa;
+    }
+
+    .option-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-top: 18px;
+    }
+
+    .option-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      background: #fafafa;
+    }
+
+    @media (max-width: 640px) {
+      .mapping-grid { grid-template-columns: 1fr; }
+      .touch-area { width: min(44vw, 220px); }
+      .touch-btn { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <section class="screen active" id="setup-screen">
+    <div class="card">
+      <h1>Érintőképernyős Stroop</h1>
+      <p>Három opció érhető el: <strong>gyakorló teszt indítása</strong>, <strong>fő teszt indítása</strong>, valamint <strong>visszaszámláló bekapcsolása</strong>. A név megmarad, amikor egy blokk után visszaléptek a főképernyőre.</p>
+
+      <div class="row">
+        <div class="field">
+          <label for="participant-id"><strong>Résztvevő azonosító</strong></label>
+          <input id="participant-id" type="text" placeholder="pl. P001" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="checkboxes">
+        <label>
+          <input id="countdown-enabled" type="checkbox" />
+          <span>Folyamatos időmérő megjelenítése az éles próbák alatt</span>
+        </label>
+      </div>
+
+      <div class="option-grid">
+        <div class="option-card">
+          <h3>Gyakorló blokk</h3>
+          <p class="small">Visszajelzéssel. Hibás vagy túl lassú válasz esetén 4500 ms-ig megjelenik a kiosztás.</p>
+          <button class="secondary-btn" id="start-practice-btn">Gyakorló teszt indítása</button>
+        </div>
+        <div class="option-card">
+          <h3>Fő blokk</h3>
+          <p class="small">64 próba/blokk, ezen belül 16 kongruens és 48 inkongruens. Egy indítás egy blokkot futtat.</p>
+          <button class="primary-btn" id="start-main-btn">Fő teszt indítása</button>
+        </div>
+      </div>
+
+      <p class="small">A fő teszt minden blokk végén külön CSV-t tölt le, majd visszalép a főképernyőre. A következő blokk így újra paraméterezhető, miközben a név megmarad.</p>
+    </div>
+  </section>
+
+  <section class="screen" id="instructions-screen">
+    <div class="card">
+      <h2 id="instructions-title">Instrukció</h2>
+      <div id="instructions-body"></div>
+      <div class="actions">
+        <button class="secondary-btn" id="back-to-setup-btn">Vissza</button>
+        <button class="primary-btn" id="begin-task-btn">Kezdés</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="block-message-screen">
+    <div class="card">
+      <h2 id="block-title">Blokk</h2>
+      <p id="block-text"></p>
+      <div class="actions">
+        <button class="primary-btn" id="block-continue-btn">Folytatás</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="experiment-screen">
+    <div id="status-line">
+      <span id="status-left"></span>
+      <span id="status-right"></span>
+    </div>
+
+    <div id="countdown-box"></div>
+    <div id="feedback-box"></div>
+    <div id="feedback-mapping">
+      <div class="mapping-grid">
+        <div class="mapping-item">
+          <div class="mapping-top"><span class="mini-button">↖</span><span>Bal felső</span></div>
+          <div><strong>PIROS</strong></div>
+        </div>
+        <div class="mapping-item">
+          <div class="mapping-top"><span class="mini-button">↙</span><span>Bal alsó</span></div>
+          <div><strong>KÉK</strong></div>
+        </div>
+        <div class="mapping-item">
+          <div class="mapping-top"><span class="mini-button">↗</span><span>Jobb felső</span></div>
+          <div><strong>ZÖLD</strong></div>
+        </div>
+        <div class="mapping-item">
+          <div class="mapping-top"><span class="mini-button">↘</span><span>Jobb alsó</span></div>
+          <div><strong>SÁRGA</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="fixation">+</div>
+    <div id="stimulus"></div>
+
+    <div class="touch-area left">
+      <button class="touch-btn" id="btn-top-left" aria-label="Bal felső válaszgomb">PIROS</button>
+      <button class="touch-btn" id="btn-bottom-left" aria-label="Bal alsó válaszgomb">KÉK</button>
+    </div>
+    <div class="touch-area right">
+      <button class="touch-btn" id="btn-top-right" aria-label="Jobb felső válaszgomb">ZÖLD</button>
+      <button class="touch-btn" id="btn-bottom-right" aria-label="Jobb alsó válaszgomb">SÁRGA</button>
+    </div>
+  </section>
+
+  <section class="screen" id="end-screen">
+    <div class="card">
+      <h2 id="end-title">Blokk vége</h2>
+      <p id="end-text"></p>
+      <div class="summary-grid" id="summary-grid"></div>
+      <div class="actions">
+        <button class="download-btn" id="download-csv-btn">CSV letöltése</button>
+        <button class="secondary-btn" id="return-home-btn">Vissza a főképernyőre</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const CONFIG = {
+      fixationMs: 600,
+      maxResponseMs: 3000,
+      itiMs: 400,
+      countdownValues: [3000, 2000, 1000],
+      feedbackErrorMs: 4500,
+      practiceTrials: 12,
+      practiceCongruent: 6,
+      practiceIncongruent: 6,
+      experimentalBlocks: 3,
+      trialsPerMainBlock: 64,
+      mainCongruent: 16,
+      mainIncongruent: 48,
+      colors: [
+        { code: 'red', label: 'PIROS', css: '#d62828' },
+        { code: 'blue', label: 'KÉK', css: '#1d4ed8' },
+        { code: 'green', label: 'ZÖLD', css: '#15803d' },
+        { code: 'yellow', label: 'SÁRGA', css: '#c28a00' }
+      ],
+      responseMap: {
+        top_left: 'red',
+        bottom_left: 'blue',
+        top_right: 'green',
+        bottom_right: 'yellow'
+      }
+    };
+
+    const els = {
+      screens: {
+        setup: document.getElementById('setup-screen'),
+        instructions: document.getElementById('instructions-screen'),
+        blockMessage: document.getElementById('block-message-screen'),
+        experiment: document.getElementById('experiment-screen'),
+        end: document.getElementById('end-screen')
+      },
+      participantId: document.getElementById('participant-id'),
+      countdownEnabled: document.getElementById('countdown-enabled'),
+      startPracticeBtn: document.getElementById('start-practice-btn'),
+      startMainBtn: document.getElementById('start-main-btn'),
+      instructionsTitle: document.getElementById('instructions-title'),
+      instructionsBody: document.getElementById('instructions-body'),
+      backToSetupBtn: document.getElementById('back-to-setup-btn'),
+      beginTaskBtn: document.getElementById('begin-task-btn'),
+      blockTitle: document.getElementById('block-title'),
+      blockText: document.getElementById('block-text'),
+      blockContinueBtn: document.getElementById('block-continue-btn'),
+      fixation: document.getElementById('fixation'),
+      stimulus: document.getElementById('stimulus'),
+      countdownBox: document.getElementById('countdown-box'),
+      feedbackBox: document.getElementById('feedback-box'),
+      feedbackMapping: document.getElementById('feedback-mapping'),
+      statusLeft: document.getElementById('status-left'),
+      statusRight: document.getElementById('status-right'),
+      summaryGrid: document.getElementById('summary-grid'),
+      endTitle: document.getElementById('end-title'),
+      endText: document.getElementById('end-text'),
+      downloadCsvBtn: document.getElementById('download-csv-btn'),
+      returnHomeBtn: document.getElementById('return-home-btn'),
+      buttons: {
+        top_left: document.getElementById('btn-top-left'),
+        bottom_left: document.getElementById('btn-bottom-left'),
+        top_right: document.getElementById('btn-top-right'),
+        bottom_right: document.getElementById('btn-bottom-right')
+      }
+    };
+
+    const STATE = {
+      participantId: '',
+      useCountdown: false,
+      currentMode: null, // 'practice' or 'main'
+      currentMainBlock: 1,
+      sessionId: '',
+      blockTrials: [],
+      results: [],
+      currentTrialIndex: -1,
+      currentTrial: null,
+      startedAt: null,
+      stimulusShownAtPerf: null,
+      stimulusShownAtIso: null,
+      responseRecorded: false,
+      timeoutHandle: null,
+      pendingMode: null
+    };
+
+    function showScreen(name) {
+      Object.values(els.screens).forEach(screen => screen.classList.remove('active'));
+      els.screens[name].classList.add('active');
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function shuffle(array) {
+      const arr = array.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function makeSessionId() {
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+      return `${stamp}_${rand}`;
+    }
+
+    function getColorByCode(code) {
+      return CONFIG.colors.find(c => c.code === code);
+    }
+
+    function responsePositionToLabel(position) {
+      const labels = {
+        top_left: 'bal_felső',
+        bottom_left: 'bal_alsó',
+        top_right: 'jobb_felső',
+        bottom_right: 'jobb_alsó'
+      };
+      return labels[position] || '';
+    }
+
+    function disableResponseButtons(disabled) {
+      Object.values(els.buttons).forEach(btn => {
+        btn.disabled = disabled;
+        btn.classList.remove('pressed');
+      });
+    }
+
+    function clearVisuals() {
+      els.fixation.style.display = 'none';
+      els.stimulus.style.display = 'none';
+      els.countdownBox.style.display = 'none';
+      els.feedbackBox.style.display = 'none';
+      els.feedbackMapping.style.display = 'none';
+      els.stimulus.textContent = '';
+      els.stimulus.style.color = '#000';
+    }
+
+    function updateStatusLine() {
+      if (!STATE.currentTrial) {
+        els.statusLeft.textContent = '';
+        els.statusRight.textContent = '';
+        return;
+      }
+      const blockText = STATE.currentMode === 'practice'
+        ? 'Gyakorló blokk'
+        : `Éles blokk ${STATE.currentMainBlock}/${CONFIG.experimentalBlocks}`;
+      els.statusLeft.textContent = blockText;
+      els.statusRight.textContent = `Próba ${STATE.currentTrial.trial_in_block}/${STATE.currentTrial.trials_in_block}`;
+    }
+
+    function buildBalancedBlock(congruentN, incongruentN, blockIndex, phaseLabel) {
+      const congruentTrials = [];
+      const incongruentTrials = [];
+
+      for (let i = 0; i < congruentN; i++) {
+        const color = CONFIG.colors[i % CONFIG.colors.length];
+        congruentTrials.push({
+          word: color.label,
+          ink_color: color.code,
+          congruency: 'congruent'
+        });
+      }
+
+      const pairs = [];
+      CONFIG.colors.forEach(wordColor => {
+        CONFIG.colors.forEach(inkColor => {
+          if (wordColor.code !== inkColor.code) {
+            pairs.push({
+              word: wordColor.label,
+              ink_color: inkColor.code,
+              congruency: 'incongruent'
+            });
+          }
+        });
+      });
+
+      for (let i = 0; i < incongruentN; i++) {
+        incongruentTrials.push({ ...pairs[i % pairs.length] });
+      }
+
+      const trials = shuffle([...congruentTrials, ...incongruentTrials]);
+      return trials.map((trial, idx) => ({
+        ...trial,
+        block_index: blockIndex,
+        trial_in_block: idx + 1,
+        trials_in_block: congruentN + incongruentN,
+        phase: phaseLabel
+      }));
+    }
+
+    function prepareBlock(mode) {
+      STATE.results = [];
+      STATE.currentTrialIndex = -1;
+      STATE.currentTrial = null;
+      STATE.currentMode = mode;
+      STATE.sessionId = makeSessionId();
+      STATE.startedAt = new Date().toISOString();
+
+      if (mode === 'practice') {
+        STATE.blockTrials = buildBalancedBlock(
+          CONFIG.practiceCongruent,
+          CONFIG.practiceIncongruent,
+          0,
+          'practice'
+        );
+      } else {
+        STATE.blockTrials = buildBalancedBlock(
+          CONFIG.mainCongruent,
+          CONFIG.mainIncongruent,
+          STATE.currentMainBlock,
+          'main'
+        );
+      }
+    }
+
+    function buildInstructionsHtml(mode) {
+      if (mode === 'practice') {
+        return `
+          <p>A gyakorló blokkban a szó <strong>betűszínét</strong> kell megérinteni, nem a szó jelentését.</p>
+          <p>Itt <strong>lesz visszajelzés</strong>:</p>
+          <ul>
+            <li>helyes válasz: <strong>CORRECT</strong></li>
+            <li>hibás válasz: <strong>INCORRECT</strong></li>
+            <li>túl lassú válasz: <strong>TOO SLOW</strong></li>
+          </ul>
+          <p>Hibás vagy túl lassú válasz után a gombkiosztás <strong>4500 ms-ig</strong> megjelenik.</p>
+          <p>Minden próba 600 ms fixációval indul, majd legfeljebb 3000 ms áll rendelkezésre a válaszra.</p>
+          <h3>Gombkiosztás</h3>
+          ${mappingHtml()}
+        `;
+      }
+
+      return `
+        <p>A fő tesztben a szó <strong>betűszínére</strong> kell reagálni, nem a szó jelentésére.</p>
+        <p><strong>Nincs közbeni visszajelzés.</strong></p>
+        <p>Egy blokk <strong>64 próbából</strong> áll, ezen belül <strong>16 kongruens</strong> és <strong>48 inkongruens</strong> próbával.</p>
+        <p>Az éles próbák alatt a főképernyőn külön bekapcsolható egy folyamatos időmérő, ami a válaszadás alatt fut.</p>
+        <h3>Gombkiosztás</h3>
+        ${mappingHtml()}
+      `;
+    }
+
+    function mappingHtml() {
+      return `
+        <div class="mapping-grid">
+          <div class="mapping-item">
+            <div class="mapping-top"><span class="mini-button">↖</span><span>Bal felső</span></div>
+            <div><strong>PIROS</strong></div>
+          </div>
+          <div class="mapping-item">
+            <div class="mapping-top"><span class="mini-button">↙</span><span>Bal alsó</span></div>
+            <div><strong>KÉK</strong></div>
+          </div>
+          <div class="mapping-item">
+            <div class="mapping-top"><span class="mini-button">↗</span><span>Jobb felső</span></div>
+            <div><strong>ZÖLD</strong></div>
+          </div>
+          <div class="mapping-item">
+            <div class="mapping-top"><span class="mini-button">↘</span><span>Jobb alsó</span></div>
+            <div><strong>SÁRGA</strong></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openInstructions(mode) {
+      STATE.pendingMode = mode;
+      els.instructionsTitle.textContent = mode === 'practice' ? 'Gyakorló blokk – instrukció' : 'Fő teszt – instrukció';
+      els.instructionsBody.innerHTML = buildInstructionsHtml(mode);
+      showScreen('instructions');
+    }
+
+    function showBlockMessage() {
+      showScreen('blockMessage');
+      if (STATE.currentMode === 'practice') {
+        els.blockTitle.textContent = 'Gyakorló blokk';
+        els.blockText.textContent = 'A gyakorló blokk most indul.';
+      } else {
+        els.blockTitle.textContent = `Éles blokk ${STATE.currentMainBlock}/${CONFIG.experimentalBlocks}`;
+        els.blockText.textContent = `A(z) ${STATE.currentMainBlock}. éles blokk most indul. Ebben a blokkban 64 próba lesz.`;
+      }
+    }
+
+    function runCountdownIfNeeded() {
+      if (!(STATE.currentMode === 'main' && STATE.useCountdown)) return;
+
+      const orange = getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() || '#f59e0b';
+      const red = getComputedStyle(document.documentElement).getPropertyValue('--red').trim() || '#ef4444';
+
+      const start = performance.now();
+      const totalMs = CONFIG.maxResponseMs;
+      els.countdownBox.style.display = 'flex';
+
+      function updateFrame(now) {
+        if (STATE.responseRecorded || !STATE.currentTrial) {
+          els.countdownBox.style.display = 'none';
+          return;
+        }
+
+        const elapsed = now - start;
+        const remaining = Math.max(0, totalMs - elapsed);
+
+        els.countdownBox.textContent = Math.ceil(remaining).toString();
+
+        if (remaining > 2000) {
+          els.countdownBox.style.background = '#ffffff';
+          els.countdownBox.style.color = '#000000';
+        } else if (remaining > 1000) {
+          els.countdownBox.style.background = '#ffffff';
+          els.countdownBox.style.color = orange;
+        } else {
+          els.countdownBox.style.background = red;
+          els.countdownBox.style.color = '#000000';
+        }
+
+        if (remaining > 0) {
+          requestAnimationFrame(updateFrame);
+        } else {
+          els.countdownBox.style.display = 'none';
+        }
+      }
+
+      requestAnimationFrame(updateFrame);
+    }
+
+    async function showFixation() {
+      clearVisuals();
+      els.fixation.style.display = 'block';
+      await sleep(CONFIG.fixationMs);
+      els.fixation.style.display = 'none';
+    }
+
+    function showStimulus(trial) {
+      clearVisuals();
+      const ink = getColorByCode(trial.ink_color);
+      els.stimulus.textContent = trial.word;
+      els.stimulus.style.color = ink.css;
+      els.stimulus.style.display = 'block';
+      STATE.stimulusShownAtPerf = performance.now();
+      STATE.stimulusShownAtIso = new Date().toISOString();
+      STATE.responseRecorded = false;
+      disableResponseButtons(false);
+      updateStatusLine();
+
+      STATE.timeoutHandle = window.setTimeout(() => {
+        if (!STATE.responseRecorded) {
+          recordResponse(null, true);
+        }
+      }, CONFIG.maxResponseMs);
+    }
+
+    async function showPracticeFeedback(correct, timeout) {
+      clearVisuals();
+      els.feedbackBox.style.display = 'flex';
+
+      if (timeout) {
+        els.feedbackBox.textContent = 'TOO SLOW';
+        els.feedbackBox.style.background = '#fff3f3';
+      } else if (correct) {
+        els.feedbackBox.textContent = 'CORRECT';
+        els.feedbackBox.style.background = '#effaf3';
+      } else {
+        els.feedbackBox.textContent = 'INCORRECT';
+        els.feedbackBox.style.background = '#fff3f3';
+      }
+
+      if (!correct || timeout) {
+        els.feedbackMapping.style.display = 'block';
+        await sleep(CONFIG.feedbackErrorMs);
+      } else {
+        await sleep(1000);
+      }
+
+      els.feedbackBox.style.display = 'none';
+      els.feedbackMapping.style.display = 'none';
+    }
+
+    async function finalizeTrialAndContinue(response, timeout) {
+      const trial = STATE.currentTrial;
+      const correctColorCode = trial.ink_color;
+      const chosenColorCode = timeout ? '' : CONFIG.responseMap[response];
+      const correct = timeout ? 0 : Number(chosenColorCode === correctColorCode);
+      const rt = timeout ? '' : Math.round(performance.now() - STATE.stimulusShownAtPerf);
+
+      STATE.results.push({
+        participant_id: STATE.participantId,
+        session_id: STATE.sessionId,
+        mode: STATE.currentMode,
+        use_countdown: STATE.currentMode === 'main' && STATE.useCountdown ? 1 : 0,
+        block_index: trial.block_index,
+        trial_in_block: trial.trial_in_block,
+        trials_in_block: trial.trials_in_block,
+        word: trial.word,
+        ink_color: trial.ink_color,
+        congruency: trial.congruency,
+        response_color: chosenColorCode,
+        response_position: response ? responsePositionToLabel(response) : '',
+        correct: correct,
+        timeout: timeout ? 1 : 0,
+        rt_ms: rt,
+        stimulus_onset_iso: STATE.stimulusShownAtIso,
+        response_time_iso: new Date().toISOString(),
+        started_at_iso: STATE.startedAt
+      });
+
+      if (STATE.currentMode === 'practice') {
+        await showPracticeFeedback(correct === 1, timeout);
+      } else {
+        clearVisuals();
+      }
+
+      await sleep(CONFIG.itiMs);
+      runNextTrial();
+    }
+
+    function recordResponse(position, timeout = false) {
+      if (STATE.responseRecorded) return;
+      STATE.responseRecorded = true;
+
+      if (STATE.timeoutHandle) {
+        clearTimeout(STATE.timeoutHandle);
+        STATE.timeoutHandle = null;
+      }
+
+      disableResponseButtons(true);
+      if (position && els.buttons[position]) {
+        els.buttons[position].classList.add('pressed');
+      }
+
+      finalizeTrialAndContinue(position, timeout);
+    }
+
+    async function runNextTrial() {
+      STATE.currentTrialIndex += 1;
+
+      if (STATE.currentTrialIndex >= STATE.blockTrials.length) {
+        finishBlock();
+        return;
+      }
+
+      STATE.currentTrial = STATE.blockTrials[STATE.currentTrialIndex];
+      updateStatusLine();
+      await showFixation();
+      showStimulus(STATE.currentTrial);
+      runCountdownIfNeeded();
+    }
+
+    function buildSummary() {
+      const rows = STATE.results;
+      const validRows = rows.filter(r => r.timeout === 0);
+      const mean = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : '—';
+      const acc = rows.length ? ((rows.filter(r => r.correct === 1).length / rows.length) * 100).toFixed(1) : '0.0';
+      const timeoutPct = rows.length ? ((rows.filter(r => r.timeout === 1).length / rows.length) * 100).toFixed(1) : '0.0';
+
+      const congruentRT = mean(rows.filter(r => r.congruency === 'congruent' && r.correct === 1 && r.timeout === 0).map(r => Number(r.rt_ms)));
+      const incongruentRT = mean(rows.filter(r => r.congruency === 'incongruent' && r.correct === 1 && r.timeout === 0).map(r => Number(r.rt_ms)));
+
+      const items = [
+        ['Résztvevő', STATE.participantId || 'nincs megadva'],
+        ['Mód', STATE.currentMode === 'practice' ? 'gyakorló' : `éles blokk ${STATE.currentMainBlock}`],
+        ['Összes próba', rows.length],
+        ['Pontosság', `${acc}%`],
+        ['Timeout arány', `${timeoutPct}%`],
+        ['Átlag RT (helyes)', mean(validRows.filter(r => r.correct === 1).map(r => Number(r.rt_ms))) + ' ms'],
+        ['Átlag RT kongruens', congruentRT + ' ms'],
+        ['Átlag RT inkongruens', incongruentRT + ' ms']
+      ];
+
+      els.summaryGrid.innerHTML = items.map(([k, v]) => `
+        <div class="summary-item">
+          <div class="small">${k}</div>
+          <div><strong>${v}</strong></div>
+        </div>
+      `).join('');
+    }
+
+    function finishBlock() {
+      clearVisuals();
+      disableResponseButtons(true);
+      buildSummary();
+
+      if (STATE.currentMode === 'practice') {
+        els.endTitle.textContent = 'Gyakorló blokk vége';
+        els.endText.textContent = 'A gyakorló blokk befejeződött. A CSV letölthető, utána vissza lehet lépni a főképernyőre és elindítani a fő tesztet.';
+      } else {
+        els.endTitle.textContent = `Éles blokk ${STATE.currentMainBlock}/${CONFIG.experimentalBlocks} vége`;
+        els.endText.textContent = 'A blokk adatai most letölthetők. Letöltés után vissza lehet lépni a főképernyőre, ahol a számláló újra beállítható.';
+      }
+
+      showScreen('end');
+    }
+
+    function escapeCsv(value) {
+      const str = String(value ?? '');
+      if (/[",\n]/.test(str)) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    function makeCsv(rows) {
+      if (!rows.length) return '';
+      const headers = Object.keys(rows[0]);
+      const lines = [headers.join(',')];
+      rows.forEach(row => {
+        lines.push(headers.map(h => escapeCsv(row[h])).join(','));
+      });
+      return lines.join('\n');
+    }
+
+    function downloadCsv() {
+      const csv = makeCsv(STATE.results);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeId = (STATE.participantId || 'anon').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const suffix = STATE.currentMode === 'practice' ? 'practice' : `block_${STATE.currentMainBlock}`;
+      a.href = url;
+      a.download = `stroop_touch_${safeId}_${suffix}_${STATE.sessionId}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function returnToHome() {
+      clearVisuals();
+      disableResponseButtons(true);
+      if (STATE.currentMode === 'main' && STATE.currentMainBlock < CONFIG.experimentalBlocks) {
+        STATE.currentMainBlock += 1;
+      }
+      STATE.currentMode = null;
+      STATE.blockTrials = [];
+      STATE.results = [];
+      STATE.currentTrialIndex = -1;
+      STATE.currentTrial = null;
+      STATE.sessionId = '';
+      STATE.startedAt = null;
+      els.statusLeft.textContent = '';
+      els.statusRight.textContent = '';
+      showScreen('setup');
+    }
+
+    function beginSelectedTask() {
+      STATE.participantId = els.participantId.value.trim();
+      STATE.useCountdown = els.countdownEnabled.checked;
+      prepareBlock(STATE.pendingMode);
+      showBlockMessage();
+    }
+
+    Object.entries(els.buttons).forEach(([position, button]) => {
+      const handler = (ev) => {
+        ev.preventDefault();
+        if (button.disabled) return;
+        recordResponse(position, false);
+      };
+      button.addEventListener('click', handler, { passive: false });
+      button.addEventListener('touchend', handler, { passive: false });
+    });
+
+    els.startPracticeBtn.addEventListener('click', () => openInstructions('practice'));
+    els.startMainBtn.addEventListener('click', () => openInstructions('main'));
+    els.backToSetupBtn.addEventListener('click', () => showScreen('setup'));
+    els.beginTaskBtn.addEventListener('click', beginSelectedTask);
+
+    els.blockContinueBtn.addEventListener('click', () => {
+      showScreen('experiment');
+      runNextTrial();
+    });
+
+    els.downloadCsvBtn.addEventListener('click', downloadCsv);
+    els.returnHomeBtn.addEventListener('click', returnToHome);
+
+    disableResponseButtons(true);
+    showScreen('setup');
+  </script>
+</body>
+</html>
